@@ -6,11 +6,15 @@ from search import *
 from agents import define_graph
 from streamlit_chat import message
 from llms import load_llm 
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import HumanMessage
+from langchain_community.callbacks import StreamlitCallbackHandler
 
 st.title("GenAI Job Agent - 🦜")
 uploaded_file = st.sidebar.file_uploader("Upload File", type="pdf")
 
+llm = load_llm()
+st_callback = StreamlitCallbackHandler(st.container())
+graph = define_graph(llm, st_callback)
 
 # Handle file upload
 if uploaded_file is not None:
@@ -27,25 +31,29 @@ if uploaded_file is not None:
     with open(file_path, "wb") as f:
         f.write(bytes_data)
 
-    llm = load_llm()
-    graph = define_graph(llm)
+
 
     def conversational_chat(query, graph):
         #Find data science job for me in Germany maximum 5 relevant one. \
         # Then analyze my CV and write me a cover letter according to the best matching job.
         results = []
+        container = st.container(border=True)
         for s in graph.stream(
             {"messages": [HumanMessage(content=query)]},
             {"recursion_limit": 100},):
             if "__end__" not in s:
                 result = list(s.values())[0]
-                results.append(result)
-                #print(s)
-                #print("----")
-                st.write(results)
+                if 'messages' in result:
+                    for message_data  in result['messages']:
+                        name = message_data.name
+                        message = message_data.content
+                        
+                        results.append(name+": "+message)
+                        container.write(name+" Agent: ")
+                        container.write(message)
+                elif 'next' in result:
+                    container.write(result)
 
-        #result = agent_executor.invoke({"input": query, "chat_history": st.session_state['history']})
-        #print(result)
         st.session_state['history'].append((query, results))
         return results
 
@@ -55,7 +63,7 @@ if uploaded_file is not None:
 
     # Initialize messages
     if 'generated' not in st.session_state:
-        st.session_state['generated'] = ["Hello ! Ask your Job agent " + uploaded_file.name + " 🤗"]
+        st.session_state['generated'] = ["Hello ! Ask anything to your Job agent: 🤗"]
 
     if 'past' not in st.session_state:
         st.session_state['past'] = ["Hey ! 👋"]
@@ -73,7 +81,7 @@ if uploaded_file is not None:
         if submit_button and user_input:
             output = conversational_chat(user_input, graph)
             st.session_state['past'].append(user_input)
-            st.session_state['generated'].append(output["agent_outcome"].return_values["output"])
+            st.session_state['generated'].append(output)
 
     # Display chat history
     if st.session_state['generated']:

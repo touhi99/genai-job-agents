@@ -1,6 +1,7 @@
 #define tools
 from langchain.agents import tool
 from data_loader import load_cv
+from search import job_threads, get_job_ids
 import asyncio
 
 @tool
@@ -14,7 +15,7 @@ def job_pipeline(keywords: str, location_name:str, job_type:str=None, limit:int=
 
 @tool
 def extract_cv() -> str:
-    """From the CV text, extract relevant skill, experience, previous job responsibility, project experience etc.
+    """Load the uploaded Resume/CV. From the CV text, extract relevant skill, experience, previous job responsibility, project experience etc.
     Returns the unstructured CV text in a structured format later to analyzer. Consider only job relevant skill, not any personal information"""
     text = load_cv("tmp/cv.pdf")
     return text
