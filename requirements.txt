@@ -2,7 +2,6 @@ grandalf
 pypdf
 langchain
 langgraph
-langchain-groq
 langchain-openai==0.0.8
 python-dotenv
 linkedin-api
