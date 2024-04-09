@@ -3,6 +3,7 @@ from langchain.agents import tool
 from data_loader import load_cv
 from search import job_threads, get_job_ids
 import asyncio
+from docx import Document
 
 @tool
 def job_pipeline(keywords: str, location_name:str, job_type:str=None, limit:int=10, companies:str=None, industries:str=None, remote:str=None) -> dict: # type: ignore
@@ -21,9 +22,16 @@ def extract_cv() -> str:
     return text
 
 @tool
-def generate_letter_for_specific_job() -> str:
+def generate_letter_for_specific_job(query: str) -> str:
     """Given the CV and highest relevant job, write a cover letter according to CV and matching with the job description. \
-       Return the letter containing contact info, proper addresser, some description of the career and motivation for this job."""
-    return  # type: ignore
+       Letter should contain contact info, proper addresser, some description of the career and motivation for this job.\
+       Return the letter in a docx file format."""
+    doc = Document()
+    # Add a paragraph with the provided text
+    doc.add_paragraph(query)
+    # Save the document to the specified file
+    filename = 'tmp/cover_letter.docx'
+    doc.save(filename)
+    print(f"Document saved")
 
-#tools = [job_pipeline, extract_cv, generate_letter_for_specific_job]
+    return filename  # type: ignore

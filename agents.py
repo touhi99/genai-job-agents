@@ -9,7 +9,7 @@ import functools
 from langgraph.graph import StateGraph, END
 from langchain_community.callbacks import StreamlitCallbackHandler
 from tools import *
-
+from prompts import *
 def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
     # Each worker node will be given a name and some tools.
     prompt = ChatPromptTemplate.from_messages(
@@ -32,14 +32,7 @@ def agent_node(state, agent, name, callbacks):
 
 def define_graph(llm, st_callback):
     members = ["Analyzer", "Generator", "Searcher"]
-    system_prompt = (
-        "You are a supervisor tasked with managing a conversation between the"
-        " following workers:  {members}. User has uploaded a document and sent a query. Given the uploaded document and following user request,"
-        " respond with the worker to act next. Each worker will perform a"
-        " task and respond with their results and status." 
-        #" Task will include, extracting cv content, searching jobs given user query, write modified cv according to best matched jobs."
-        " When finished, respond with FINISH."
-    )
+    system_prompt = (SYSTEM_PROMPT)
 
     # Our team supervisor is an LLM node. It just picks the next agent to process
     # and decides when the work is completed
@@ -78,13 +71,13 @@ def define_graph(llm, st_callback):
         | JsonOutputFunctionsParser()
     )
 
-    search_agent = create_agent(llm, [job_pipeline], "Given user job related queries of searching a role with necessary parameters, show the most relevant jobs with title, company url, job location and detailed job description")
+    search_agent = create_agent(llm, [job_pipeline], SEARCH_AGENT)
     search_node = functools.partial(agent_node, agent=search_agent, name="Searcher", callbacks=st_callback)
 
-    analyzer_agent = create_agent(llm, [extract_cv], "Analyzer extracts the user uploaded document, then reviews the content and relevant job listings from the Searcher. It extracts information from the resume to find the best matching job.")
+    analyzer_agent = create_agent(llm, [extract_cv], ANALYZER_AGENT)
     analyzer_node = functools.partial(agent_node, agent=analyzer_agent, name="Analyzer", callbacks=st_callback)
 
-    generator_agent = create_agent(llm, [generate_letter_for_specific_job], "Given the extracted CV and highest matching job from the Analyzer, write a cover letter motivated with the job.")
+    generator_agent = create_agent(llm, [generate_letter_for_specific_job], GENERATOR_AGENT)
     generator_node = functools.partial(agent_node, agent=generator_agent, name="Generator", callbacks=st_callback)
 
     workflow = StateGraph(AgentState)
@@ -112,6 +105,5 @@ class AgentState(TypedDict):
     # The annotation tells the graph that new messages will always be added to the current states
     input: str
     messages: Annotated[Sequence[BaseMessage], operator.add]
-    # The 'next' field indicates where to route to next
     next: str
     #callbacks: StreamlitCallbackHandler

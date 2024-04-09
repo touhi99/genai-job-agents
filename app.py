@@ -10,7 +10,7 @@ from langchain_core.messages import HumanMessage
 from langchain_community.callbacks import StreamlitCallbackHandler
 
 st.title("GenAI Job Agent - 🦜")
-uploaded_file = st.sidebar.file_uploader("Upload File", type="pdf")
+uploaded_file = st.sidebar.file_uploader("Upload Your CV", type="pdf")
 
 llm = load_llm()
 st_callback = StreamlitCallbackHandler(st.container())
@@ -31,13 +31,9 @@ if uploaded_file is not None:
     with open(file_path, "wb") as f:
         f.write(bytes_data)
 
-
-
     def conversational_chat(query, graph):
-        #Find data science job for me in Germany maximum 5 relevant one. \
-        # Then analyze my CV and write me a cover letter according to the best matching job.
         results = []
-        container = st.container(border=True)
+        #container = st.container(border=True)
         for s in graph.stream(
             {"messages": [HumanMessage(content=query)]},
             {"recursion_limit": 100},):
@@ -48,14 +44,14 @@ if uploaded_file is not None:
                         name = message_data.name
                         message = message_data.content
                         
-                        results.append(name+": "+message)
-                        container.write(name+" Agent: ")
-                        container.write(message)
+                        results.append(name+" Agent: "+message)
+                        st.header(name+" Agent: ")
+                        st.write(message)
                 elif 'next' in result:
-                    container.write(result)
+                    st.write(result)
 
         st.session_state['history'].append((query, results))
-        return results
+        return ' '.join(results)
 
     # Initialize chat history
     if 'history' not in st.session_state:
