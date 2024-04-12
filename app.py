@@ -8,6 +8,7 @@ from streamlit_chat import message
 from llms import load_llm 
 from langchain_core.messages import HumanMessage
 from langchain_community.callbacks import StreamlitCallbackHandler
+from streamlit_pills import pills
 
 st.title("GenAI Job Agent - 🦜")
 uploaded_file = st.sidebar.file_uploader("Upload Your CV", type="pdf")
@@ -53,14 +54,14 @@ if uploaded_file is not None:
         st.session_state['history'].append((query, results))
         return ' '.join(results)
 
+    if 'selected_index' not in st.session_state:
+        st.session_state['selected_index'] = None 
     # Initialize chat history
     if 'history' not in st.session_state:
         st.session_state['history'] = []
-
     # Initialize messages
     if 'generated' not in st.session_state:
         st.session_state['generated'] = ["Hello ! Ask anything to your Job agent: 🤗"]
-
     if 'past' not in st.session_state:
         st.session_state['past'] = ["Hey ! 👋"]
 
@@ -70,14 +71,34 @@ if uploaded_file is not None:
 
     # User input form
     with container:
+        options =  [
+                    "Extract and summarize my CV",
+                    "Find me Data scientist job in Germany",
+                    "Find me Data scientist job in Germany. Extract details from my CV and match most relevant ones according to my skill.",
+                    "Find me Data scientist job in Germany. Extract details from my CV and match most relevant ones according to my skill. Then, write me a cover letter for that job using my background info.",
+                ]
+        selected = pills(
+                "Choose a question to get started or write your own below.",
+                options,
+                clearable=None,
+                index=st.session_state['selected_index'],
+                key="pills"
+            )
+        if selected:
+            st.session_state['selected_index'] = options.index(selected)
+
+
         with st.form(key='my_form', clear_on_submit=True):
-            user_input = st.text_input("Query:", placeholder="Write your query 👉 (:", key='input')
+            user_input = st.text_input("Query:", value=(selected if selected else st.session_state.get('input_text', '')), placeholder="Write your query 👉 (:", key='input')
             submit_button = st.form_submit_button(label='Send')
+            
 
         if submit_button and user_input:
             output = conversational_chat(user_input, graph)
             st.session_state['past'].append(user_input)
             st.session_state['generated'].append(output)
+            st.session_state['input_text'] = user_input  # Save the last input
+            st.session_state['selected_index'] = None 
 
     # Display chat history
     if st.session_state['generated']:
@@ -85,3 +106,4 @@ if uploaded_file is not None:
             for i in range(len(st.session_state['generated'])):
                 message(st.session_state["past"][i], is_user=True, key=str(i) + '_user', avatar_style="big-smile")
                 message(st.session_state["generated"][i], key=str(i), avatar_style="thumbs")
+        
