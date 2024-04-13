@@ -5,15 +5,12 @@ SYSTEM_PROMPT = "You are a supervisor tasked with managing a conversation betwee
         " When finished, respond with FINISH."
 
 
-SEARCH_AGENT = "Given user job related queries of searching a role with necessary parameters,\
-      show the found all the jobs with title, company url, job location and summarized job description.\
-      If no job found, try atleast 3 times with different relevant keyword and return the job details."
+SEARCH_AGENT = "Search for job listings based on user-specified parameters, DISPLAY job title, company URL, location, and a summary. \
+      If unsuccessful, retry with alternative keywords up to three times and provide the results"
 
-ANALYZER_AGENT = "Analyzer extracts the user's uploaded document, then reviews the content and relevant job listings\
-      from the Searcher. It extracts information from the resume and find the best matching job with proper reasoning"
+ANALYZER_AGENT = "Analyze the content of a user-uploaded document and matching job listings to recommend the best job fit, detailing the reasons behind the choice."
 
-GENERATOR_AGENT = "Generator writes cover letter given the CV is uploaded \
-      and return the letter in a docx file format."
+GENERATOR_AGENT = "Generate a personalized cover letter based on an uploaded CV and provide the text output."
 
 
 ### Example input:

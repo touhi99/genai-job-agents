@@ -8,4 +8,4 @@ linkedin-api
 streamlit
 nest-asyncio
 streamlit_chat
-python-docx
+streamlit_pills

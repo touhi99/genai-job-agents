@@ -10,6 +10,7 @@ from langchain_core.messages import HumanMessage
 from langchain_community.callbacks import StreamlitCallbackHandler
 from streamlit_pills import pills
 
+st.set_page_config(layout="wide")
 st.title("GenAI Job Agent - 🦜")
 uploaded_file = st.sidebar.file_uploader("Upload Your CV", type="pdf")
 
@@ -74,13 +75,13 @@ if uploaded_file is not None:
         options =  [
                     "Extract and summarize my CV",
                     "Find me Data scientist job in Germany",
-                    "Find me Data scientist job in Germany. Extract details from my CV and match most relevant ones according to my skill.",
-                    "Find me Data scientist job in Germany. Extract details from my CV and match most relevant ones according to my skill. Then, write me a cover letter for that job using my background info.",
-                ]
+                    "Generate a cover letter for my cv",
+                    "Find Data Scientist jobs in Germany, align them with my CV skills, and generate a cover letter tailored to my background."                
+                    ]
         selected = pills(
                 "Choose a question to get started or write your own below.",
                 options,
-                clearable=None,
+                clearable=None, # type: ignore
                 index=st.session_state['selected_index'],
                 key="pills"
             )
