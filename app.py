@@ -9,13 +9,13 @@ from llms import load_llm
 from langchain_core.messages import HumanMessage
 from langchain_community.callbacks import StreamlitCallbackHandler
 from streamlit_pills import pills
-from langsmith import traceable
 
 st.set_page_config(layout="wide")
 st.title("GenAI Job Agent - 🦜")
 uploaded_file = st.sidebar.file_uploader("Upload Your CV", type="pdf")
 
-llm = load_llm()
+llm_name=os.environ['LLM_NAME']
+llm = load_llm(llm_name)
 st_callback = StreamlitCallbackHandler(st.container())
 graph = define_graph(llm, st_callback)
 

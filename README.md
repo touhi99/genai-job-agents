@@ -14,20 +14,22 @@ This is a simple Langgraph/Langchain based AI agent as a learning experiment of 
 ### Usage
 
 These environment variables are required:
-``OPENAI_API_KEY=<OPENAI_API_KEY>
+
+```
+OPENAI_API_KEY=<OPENAI_API_KEY>
 LINKEDIN_EMAIL=<LINKEDIN_EMAIL>
-LINKEDIN_PASS=<LINKEDIN_PASS>``
+LINKEDIN_PASS=<LINKEDIN_PASS>
 LANGCHAIN_API_KEY=<LANGSMITH_KEY>
 LANGCHAIN_TRACING_V2=true
 LLM_NAME=<LLM_NAME> groq/openai
+```
 
-Then run on terminal
-
+Then run on terminal:
 ```streamlit run app.py```
 
 ### Agents
 
-````
+```
                                           +-----------+                                          
                                           | __start__ |                                          
                                           +-----------+                                          
@@ -50,6 +52,7 @@ Then run on terminal
 | Extractor |                 | __end__ |                  | Generator |            | Searcher | 
 +-----------+                 +---------+                  +-----------+            +----------+ 
 ````
+
 ### TODO
 - enrich linkedin search with more params
 - fix streamlit callback handler
