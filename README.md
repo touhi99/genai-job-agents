@@ -17,6 +17,9 @@ These environment variables are required:
 ``OPENAI_API_KEY=<OPENAI_API_KEY>
 LINKEDIN_EMAIL=<LINKEDIN_EMAIL>
 LINKEDIN_PASS=<LINKEDIN_PASS>``
+LANGCHAIN_API_KEY=<LANGSMITH_KEY>
+LANGCHAIN_TRACING_V2=true
+LLM_NAME=<LLM_NAME> groq/openai
 
 Then run on terminal
 

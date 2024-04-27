@@ -9,6 +9,7 @@ from llms import load_llm
 from langchain_core.messages import HumanMessage
 from langchain_community.callbacks import StreamlitCallbackHandler
 from streamlit_pills import pills
+from langsmith import traceable
 
 st.set_page_config(layout="wide")
 st.title("GenAI Job Agent - 🦜")
@@ -33,6 +34,7 @@ if uploaded_file is not None:
     with open(file_path, "wb") as f:
         f.write(bytes_data)
 
+    #@traceable # Auto-trace this function
     def conversational_chat(query, graph):
         results = []
         #container = st.container(border=True)
@@ -45,7 +47,8 @@ if uploaded_file is not None:
                     for message_data  in result['messages']:
                         name = message_data.name
                         message = message_data.content
-                        
+                        if name is None:
+                            name = ''
                         results.append(name+" Agent: "+message)
                         st.header(name+" Agent: ")
                         st.write(message)

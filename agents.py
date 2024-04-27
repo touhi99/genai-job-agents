@@ -3,6 +3,8 @@ from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain.output_parsers.openai_tools import JsonOutputToolsParser
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 import operator
 from typing import Annotated, Sequence, TypedDict
 import functools
@@ -10,6 +12,7 @@ from langgraph.graph import StateGraph, END
 from langchain_community.callbacks import StreamlitCallbackHandler
 from tools import *
 from prompts import *
+
 def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
     # Each worker node will be given a name and some tools.
     prompt = ChatPromptTemplate.from_messages(
@@ -29,6 +32,17 @@ def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
 def agent_node(state, agent, name, callbacks):
     result = agent.invoke(state, callbacks=callbacks)
     return {"messages": [HumanMessage(content=result["output"], name=name)]} #["output"]
+
+def debug_output(data):
+    print("DEBUG OUTPUT:", data)
+    return data
+
+def flatten_output(data):
+    if 'args' in data and isinstance(data['args'], dict):
+        # Move the contents of 'args' up to the top level
+        args_content = data.pop('args')  # Remove 'args' and capture its contents
+        data.update(args_content)  # Merge these contents into the top level of the dictionary
+    return data
 
 def define_graph(llm, st_callback):
     members = ["Analyzer", "Generator", "Searcher"]
@@ -65,11 +79,22 @@ def define_graph(llm, st_callback):
                 " Or should we FINISH? Select one of: {options}",
             ),]).partial(options=str(options), members=", ".join(members))
 
-    supervisor_chain = (
-        prompt
-        | llm.bind_functions(functions=[function_def], function_call="route") 
-        | JsonOutputFunctionsParser()
-    )
+    llm_name=os.environ['LLM_NAME']
+    if llm_name=="openai":
+        supervisor_chain = (
+            prompt
+            | llm.bind_functions(functions=[function_def], function_call="route") 
+            | JsonOutputFunctionsParser()
+        )
+    elif llm_name=="groq":
+        supervisor_chain = (
+            prompt
+            | llm.bind_tools(tools=[function_def]) 
+            | JsonOutputToolsParser(first_tool_only=True)
+            | flatten_output
+        )
+        print("DEBUG1#", supervisor_chain)
+
 
     search_agent = create_agent(llm, [job_pipeline], SEARCH_AGENT)
     search_node = functools.partial(agent_node, agent=search_agent, name="Searcher", callbacks=st_callback)

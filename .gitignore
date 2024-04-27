@@ -6,3 +6,4 @@ notebooks/*
 tmp/*
 .conda/*
 .vscode/*
+__pycache__/*

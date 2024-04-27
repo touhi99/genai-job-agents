@@ -1,4 +1,5 @@
 #define tools
+from ast import List
 from langchain.agents import tool
 from data_loader import load_cv, write_to_docx
 from search import job_threads, get_job_ids
@@ -69,3 +70,31 @@ def generate_letter_for_specific_job(query: str):
     print(abs_path)
     return "Here is the download link: ",  abs_path
 """
+
+def get_tools():
+    return [job_pipeline, extract_cv, generate_letter_for_specific_job]
+
+@tool
+def func_alternative_tool(msg: str, members):
+    """Router tool route message among different members"""
+    members = ["Analyzer", "Generator", "Searcher"]
+    options = ["FINISH"] + members
+    # Using openai function calling can make output parsing easier for us
+    function_def = {
+        "name": "route",
+        "description": "Select the next role.",
+        "parameters": {
+            "title": "routeSchema",
+            "type": "object",
+            "properties": {
+                "next": {
+                    "title": "Next",
+                    "anyOf": [
+                        {"enum": options},
+                    ],
+                }
+            },
+            "required": ["next"],
+        },
+    }
+    return function_def
