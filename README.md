@@ -27,6 +27,7 @@ LLM_NAME=<LLM_NAME> groq/openai
 Then run on terminal:
 ```streamlit run app.py```
 
+Currently works well only with OpenAI GPT-4 / Llama/Groq still unstable.
 ### Agents
 
 ```
@@ -55,5 +56,4 @@ Then run on terminal:
 
 ### TODO
 - enrich linkedin search with more params
-- fix streamlit callback handler
-- bug fixes
+- bug fixes: Groq Llama, unstable, due to inappropriate routing / token limit

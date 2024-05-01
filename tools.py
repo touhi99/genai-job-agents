@@ -4,7 +4,8 @@ from langchain.agents import tool
 from data_loader import load_cv, write_to_docx
 from search import job_threads, get_job_ids
 import asyncio
-import os 
+from langchain.pydantic_v1 import BaseModel, Field
+
 @tool
 def job_pipeline(keywords: str, location_name:str, job_type:str=None, limit:int=10, companies:str=None, industries:str=None, remote:str=None) -> dict: # type: ignore
     """
@@ -27,16 +28,18 @@ def job_pipeline(keywords: str, location_name:str, job_type:str=None, limit:int=
     job_desc = asyncio.run(job_threads(job_ids))
     return job_desc # type: ignore
 
-@tool
-def extract_cv() -> str:
+@tool("extractor_tool", return_direct=False)
+def extract_cv() -> dict:
     """
     Extract and structure job-relevant information from an uploaded CV.
 
     Returns:
-    str: The text of the CV formatted to highlight skills, experience, and qualifications relevant to job applications, omitting personal information.
+    dict: The content of the highlight skills, experience, and qualifications relevant to job applications, omitting personal information in a dictionary
     """
+    cv_extracted_json = {}
     text = load_cv("tmp/cv.pdf")
-    return text
+    cv_extracted_json['content'] = text
+    return cv_extracted_json
 
 
 @tool

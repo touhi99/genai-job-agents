@@ -1,8 +1,7 @@
 import streamlit as st
-import os
 from dotenv import load_dotenv
+import os
 load_dotenv()
-from search import *
 from agents import define_graph
 from streamlit_chat import message
 from llms import load_llm 
@@ -14,10 +13,11 @@ st.set_page_config(layout="wide")
 st.title("GenAI Job Agent - 🦜")
 uploaded_file = st.sidebar.file_uploader("Upload Your CV", type="pdf")
 
-llm_name=os.environ['LLM_NAME']
+llm_name=os.environ.get('LLM_NAME')
 llm = load_llm(llm_name)
+print(llm)
 st_callback = StreamlitCallbackHandler(st.container())
-graph = define_graph(llm, st_callback)
+graph = define_graph(llm, llm_name)
 
 # Handle file upload
 if uploaded_file is not None:

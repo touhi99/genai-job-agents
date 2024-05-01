@@ -1,17 +1,17 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import PromptTemplate
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.output_parsers.openai_tools import JsonOutputToolsParser
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 import operator
 from typing import Annotated, Sequence, TypedDict
 import functools
 from langgraph.graph import StateGraph, END
-from langchain_community.callbacks import StreamlitCallbackHandler
 from tools import *
 from prompts import *
+import os 
 
 def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
     # Each worker node will be given a name and some tools.
@@ -29,9 +29,10 @@ def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str):
     executor = AgentExecutor(agent=agent, tools=tools) # type: ignore
     return executor
 
-def agent_node(state, agent, name, callbacks):
-    result = agent.invoke(state, callbacks=callbacks)
-    return {"messages": [HumanMessage(content=result["output"], name=name)]} #["output"]
+def agent_node(state, agent, name):
+    print("STATES ARE", state)
+    result = agent.invoke(state)
+    return {"messages": [HumanMessage(content=result["output"], name=name)]} 
 
 def debug_output(data):
     print("DEBUG OUTPUT:", data)
@@ -44,9 +45,9 @@ def flatten_output(data):
         data.update(args_content)  # Merge these contents into the top level of the dictionary
     return data
 
-def define_graph(llm, st_callback):
+def define_graph(llm, llm_name):
     members = ["Analyzer", "Generator", "Searcher"]
-    system_prompt = (SYSTEM_PROMPT)
+    system_prompt = (get_system_prompt(llm_name))
 
     # Our team supervisor is an LLM node. It just picks the next agent to process
     # and decides when the work is completed
@@ -70,23 +71,17 @@ def define_graph(llm, st_callback):
         },
     }
 
-    prompt = ChatPromptTemplate.from_messages(
-        [("system", system_prompt),
-            MessagesPlaceholder(variable_name="messages"),
-            (
-                "system",
-                "Given the conversation above, who should act next?"
-                " Or should we FINISH? Select one of: {options}",
-            ),]).partial(options=str(options), members=", ".join(members))
+    llm_name=os.environ.get('LLM_NAME')
+    prompt = routing_prompt(llm_name, options, members)
 
-    llm_name=os.environ['LLM_NAME']
+    print(llm_name)
     if llm_name=="openai":
         supervisor_chain = (
             prompt
             | llm.bind_functions(functions=[function_def], function_call="route") 
             | JsonOutputFunctionsParser()
         )
-    elif llm_name=="groq":
+    elif llm_name=="groq" or llm_name=="llama3":
         supervisor_chain = (
             prompt
             | llm.bind_tools(tools=[function_def]) 
@@ -96,14 +91,14 @@ def define_graph(llm, st_callback):
         print("DEBUG1#", supervisor_chain)
 
 
-    search_agent = create_agent(llm, [job_pipeline], SEARCH_AGENT)
-    search_node = functools.partial(agent_node, agent=search_agent, name="Searcher", callbacks=st_callback)
+    search_agent = create_agent(llm, [job_pipeline], get_search_agent_prompt(llm_name))
+    search_node = functools.partial(agent_node, agent=search_agent, name="Searcher")
 
-    analyzer_agent = create_agent(llm, [extract_cv], ANALYZER_AGENT)
-    analyzer_node = functools.partial(agent_node, agent=analyzer_agent, name="Analyzer", callbacks=st_callback)
+    analyzer_agent = create_agent(llm, [extract_cv], get_analyzer_agent_prompt(llm_name))
+    analyzer_node = functools.partial(agent_node, agent=analyzer_agent, name="Analyzer")
 
-    generator_agent = create_agent(llm, [generate_letter_for_specific_job], GENERATOR_AGENT)
-    generator_node = functools.partial(agent_node, agent=generator_agent, name="Generator", callbacks=st_callback)
+    generator_agent = create_agent(llm, [generate_letter_for_specific_job], get_generator_agent_prompt(llm_name))
+    generator_node = functools.partial(agent_node, agent=generator_agent, name="Generator")
 
     workflow = StateGraph(AgentState)
     workflow.add_node("Analyzer", analyzer_node)
@@ -131,4 +126,3 @@ class AgentState(TypedDict):
     input: str
     messages: Annotated[Sequence[BaseMessage], operator.add]
     next: str
-    #callbacks: StreamlitCallbackHandler
